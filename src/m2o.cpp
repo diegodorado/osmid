@@ -54,6 +54,7 @@ struct ProgramOptions {
     string virtualPortName;
     unsigned int monitor;
     bool listPorts;
+    bool oscCompactMessages;;
 };
 
 void showVersion()
@@ -73,6 +74,7 @@ int setup_and_parse_program_options(int argc, char* argv[], ProgramOptions& prog
     ("o,oscport", "OSC Output port - can be specified multiple times (default:57120)", cxxopts::value<vector<int> >(programOptions.oscOutputPorts))
     ("t,osctemplate", "OSC output template (use $n: midi port name, $i: midi port id, $c: midi channel, $m: message_type", cxxopts::value<string>(programOptions.oscTemplate))
     ("r,oscrawmidimessage", "OSC send the raw MIDI data as part of the OSC message", cxxopts::value<bool>(programOptions.oscRawMidiMessage))
+    ("c,osccompactmessages", "OSC sends a single byte for cc and note messages, adding notenumber or contrl number to the path of the OSC message", cxxopts::value<bool>(programOptions.oscCompactMessages))
     ("b,heartbeat", "OSC send the heartbeat with info about the active MIDI devices", cxxopts::value<bool>(programOptions.oscHeartbeat))
     ("m,monitor", "Monitor and logging level (lower more verbose)", cxxopts::value<unsigned int>(programOptions.monitor)->default_value("2")->implicit_value("1"))
     ("h,help", "Display this help message")
@@ -97,6 +99,7 @@ int setup_and_parse_program_options(int argc, char* argv[], ProgramOptions& prog
 
     programOptions.useOscTemplate = (options.count("osctemplate") ? true : false);
     programOptions.oscRawMidiMessage = (options.count("oscrawmidimessage") ? true : false);
+    programOptions.oscCompactMessages = (options.count("osccompactmessages") ? true : false);
     programOptions.oscHeartbeat = (options.count("heartbeat") ? true : false);
     programOptions.useVirtualPort = (options.count("virtualport") ? true : false);
     programOptions.listPorts = (options.count("list") ? true : false);
@@ -127,6 +130,7 @@ void prepareMidiProcessors(vector<unique_ptr<MidiInProcessor> >& midiInputProces
             if (popts.useOscTemplate)
                 midiInputProcessor->setOscTemplate(popts.oscTemplate);
             midiInputProcessor->setOscRawMidiMessage(popts.oscRawMidiMessage);
+            midiInputProcessor->setOscCompactMessages(popts.oscCompactMessages);
             midiInputProcessors.push_back(std::move(midiInputProcessor));
         } catch (const std::out_of_range&) {
             cout << "The device " << input << " does not exist";

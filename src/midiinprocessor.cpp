@@ -66,12 +66,12 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
     // Process the message
     switch (status) {
     case 0x80:
-        message_type = "note_off";
+        message_type = m_oscCompactMessages ? "note" : "note_off";
         assert(nBytes == 3);
         break;
 
     case 0x90:
-        message_type = "note_on";
+        message_type = m_oscCompactMessages ? "note" : "note_on";
         assert(nBytes == 3);
         break;
 
@@ -81,7 +81,7 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
         break;
 
     case 0xB0:
-        message_type = "control_change";
+        message_type = m_oscCompactMessages ? "cc" :  "control_change";
         assert(nBytes == 3);
         break;
 
@@ -186,6 +186,12 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
         path << "/" << message_type;
     }
 
+    // add noteNumber/ctrlNumber to the path for compact messages
+    if(m_oscCompactMessages && (status == 0x90 || status == 0x80 || status == 0xB0)){
+        path << "/"  << (int)message[1];
+    }
+
+
     // And now prepare the OSC message body
     char buffer[1024];
     osc::OutboundPacketStream p(buffer, 1024);
@@ -204,9 +210,15 @@ void MidiInProcessor::handleIncomingMidiMessage(MidiInput* source, const juce::M
             p << (int)(midiMessage.getPitchWheelValue());
         }
         else {
-            for (int i = 1; i < nBytes; i++) {
-                p << (int)message[i];
+            // add only value to note or cc messages, and force noteoff value to 0
+            if(m_oscCompactMessages && (status == 0x90 || status == 0x80 || status == 0xB0)){
+                p << ((status == 0x80 ) ? 0 : (int)message[2]);
+            }else{
+              for (int i = 1; i < nBytes; i++) {
+                  p << (int)message[i];
+              }
             }
+
         }
     }
     p << osc::EndMessage;
@@ -242,6 +254,12 @@ void MidiInProcessor::setOscRawMidiMessage(bool oscRawMidiMessage)
 {
     m_oscRawMidiMessage = oscRawMidiMessage;
 }
+
+void MidiInProcessor::setOscCompactMessages(bool oscCompactMessages)
+{
+    m_oscCompactMessages = oscCompactMessages;
+}
+
 
 void MidiInProcessor::doTemplateSubst(string& str, const string& portName, int portId, int channel, const string& message_type) const
 {

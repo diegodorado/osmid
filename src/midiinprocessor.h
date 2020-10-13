@@ -35,6 +35,7 @@ public:
     void handleIncomingMidiMessage(MidiInput* source, const juce::MidiMessage& midiMessage) override;
     void setOscTemplate(const std::string& oscTemplate);
     void setOscRawMidiMessage(bool oscRawMidiMessage);
+    void setOscCompactMessages(bool oscCompactMessages);
     int getInputId() const { return m_input->getPortId(); };
     std::string getInputNormalizedPortName() const { return m_input->getNormalizedPortName(); };
     std::string getInputPortname() const { return m_input->getPortName(); };
@@ -47,6 +48,7 @@ protected:
     bool m_useOscTemplate;
     std::string m_oscTemplate;
     bool m_oscRawMidiMessage;
+    bool m_oscCompactMessages;
 
     // To avoid having to construct the regex everytime
     static std::regex regexName;
